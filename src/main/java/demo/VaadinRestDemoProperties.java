@@ -1,5 +1,7 @@
 package demo;
 
+import java.time.Duration;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("demo.vaadin.rest")
@@ -18,6 +20,11 @@ public class VaadinRestDemoProperties {
 		 */
 		private String token;
 
+		/**
+		 * Simulated latency.
+		 */
+		private Duration delay = Duration.ofSeconds(5);
+
 		public String getToken() {
 			return this.token;
 		}
@@ -25,5 +32,14 @@ public class VaadinRestDemoProperties {
 		public void setToken(String token) {
 			this.token = token;
 		}
+
+		public Duration getDelay() {
+			return this.delay;
+		}
+
+		public void setDelay(Duration delay) {
+			this.delay = delay;
+		}
+
 	}
 }

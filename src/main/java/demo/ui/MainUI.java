@@ -1,5 +1,7 @@
 package demo.ui;
 
+import java.time.Duration;
+
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -11,6 +13,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import demo.VaadinRestDemoProperties;
 import demo.github.Commit;
 import demo.github.GithubClient;
 
@@ -28,8 +31,11 @@ public class MainUI extends VerticalLayout {
 
 	private final GithubClient githubClient;
 
-	public MainUI(GithubClient c) {
+	private final Duration delay;
+
+	public MainUI(GithubClient c, VaadinRestDemoProperties properties) {
 		this.githubClient = c;
+		this.delay = properties.getGithub().getDelay();
 
 		commits.addComponentColumn(this::createLink).setFlexGrow(3).setHeader("Message");
 		commits.addColumn(commit -> commit.getCommitter().getName()).setFlexGrow(1).setHeader("Committer");
@@ -55,6 +61,12 @@ public class MainUI extends VerticalLayout {
 	}
 
 	private void listCommits() {
+		try {
+			Thread.sleep(this.delay.toMillis());
+		}
+		catch (InterruptedException ex) {
+			// Oh well
+		}
 		commits.setItems(githubClient.getRecentCommits(
 				organization.getValue(), project.getValue()));
 	}
