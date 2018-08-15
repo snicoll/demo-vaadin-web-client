@@ -7,9 +7,12 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -29,6 +32,9 @@ public class MainUI extends VerticalLayout {
 
 	private TextField project = new TextField("Project:", "spring", "");
 
+	private final Notification notification = new Notification(
+			new Span("Waiting for github.com"));
+
 	private final GithubClient githubClient;
 
 	private final Duration delay;
@@ -44,6 +50,11 @@ public class MainUI extends VerticalLayout {
 		Button refresh = new Button("", this::refresh);
 		refresh.setIcon(VaadinIcon.REFRESH.create());
 		refresh.getElement().getThemeList().add("primary");
+
+		ProgressBar progressBar = new ProgressBar();
+		progressBar.setIndeterminate(true);
+		notification.setPosition(Notification.Position.MIDDLE);
+		notification.add(progressBar);
 
 		HorizontalLayout horizontalLayout = new HorizontalLayout(
 				organization, project, refresh
@@ -61,6 +72,7 @@ public class MainUI extends VerticalLayout {
 	}
 
 	private void listCommits() {
+		this.notification.open();
 		try {
 			Thread.sleep(this.delay.toMillis());
 		}
@@ -69,6 +81,7 @@ public class MainUI extends VerticalLayout {
 		}
 		commits.setItems(githubClient.getRecentCommits(
 				organization.getValue(), project.getValue()));
+		this.notification.close();
 	}
 
 	private void refresh(ClickEvent clickEvent) {
