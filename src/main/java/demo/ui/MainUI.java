@@ -12,16 +12,19 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.Command;
 import demo.VaadinRestDemoProperties;
 import demo.github.Commit;
-import demo.github.GithubClient;
+import demo.github.GithubWebClient;
 
 @PageTitle("Vaadin with RestTemplate demo")
 @Route("")
+@Push
 public class MainUI extends VerticalLayout {
 
 	private static final long serialVersionUID = 1L;
@@ -35,11 +38,11 @@ public class MainUI extends VerticalLayout {
 	private final Notification notification = new Notification(
 			new Span("Waiting for github.com"));
 
-	private final GithubClient githubClient;
+	private final GithubWebClient githubClient;
 
 	private final Duration delay;
 
-	public MainUI(GithubClient c, VaadinRestDemoProperties properties) {
+	public MainUI(GithubWebClient c, VaadinRestDemoProperties properties) {
 		this.githubClient = c;
 		this.delay = properties.getGithub().getDelay();
 
@@ -73,15 +76,16 @@ public class MainUI extends VerticalLayout {
 
 	private void listCommits() {
 		this.notification.open();
-		try {
-			Thread.sleep(this.delay.toMillis());
-		}
-		catch (InterruptedException ex) {
-			// Oh well
-		}
-		commits.setItems(githubClient.getRecentCommits(
-				organization.getValue(), project.getValue()));
-		this.notification.close();
+		githubClient.getRecentCommits(organization.getValue(), project.getValue())
+				.collectList()
+				.delayElement(this.delay)
+				.doAfterTerminate(() -> uiAccess(this.notification::close))
+				.subscribe((commits) -> uiAccess(() -> this.commits.setItems(commits)),
+						(exception) -> System.out.println("Ooops " + exception.getMessage()));
+	}
+
+	private void uiAccess(Command command) {
+		getUI().ifPresent(ui -> ui.access(command));
 	}
 
 	private void refresh(ClickEvent clickEvent) {
