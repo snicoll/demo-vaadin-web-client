@@ -21,6 +21,8 @@ import com.vaadin.flow.server.Command;
 import demo.VaadinRestDemoProperties;
 import demo.github.Commit;
 import demo.github.GithubWebClient;
+import reactor.core.Disposable;
+import reactor.core.Disposables;
 
 @PageTitle("Vaadin with RestTemplate demo")
 @Route("")
@@ -41,6 +43,8 @@ public class MainUI extends VerticalLayout {
 	private final GithubWebClient githubClient;
 
 	private final Duration delay;
+
+	private final Disposable.Swap listCommitsDisposable = Disposables.swap();
 
 	public MainUI(GithubWebClient c, VaadinRestDemoProperties properties) {
 		this.githubClient = c;
@@ -76,12 +80,14 @@ public class MainUI extends VerticalLayout {
 
 	private void listCommits() {
 		this.notification.open();
-		githubClient.getRecentCommits(organization.getValue(), project.getValue())
-				.collectList()
-				.delayElement(this.delay)
+		Disposable cancellable = githubClient
+				.getRecentCommits(organization.getValue(), project.getValue())
+				.log()
+				.collectList().delayElement(this.delay)
 				.doAfterTerminate(() -> uiAccess(this.notification::close))
 				.subscribe((commits) -> uiAccess(() -> this.commits.setItems(commits)),
 						(exception) -> System.out.println("Ooops " + exception.getMessage()));
+		listCommitsDisposable.update(cancellable);
 	}
 
 	private void uiAccess(Command command) {
